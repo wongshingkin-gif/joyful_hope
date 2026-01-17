@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>望：全心依靠 - 快樂複習 V2</title>
+    <style>
+        body {
+            font-family: '微軟正黑體', 'Microsoft JhengHei', sans-serif;
+            background-color: #e0f2f1; /* 淺綠色背景 */
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 4px solid #4db6ac;
+        }
+        h1 { color: #00695c; font-size: 2em; margin-bottom: 10px; }
+        .progress { color: #888; margin-bottom: 20px; font-size: 0.9em; }
+        .question-box {
+            font-size: 1.3em;
+            margin: 20px 0;
+            color: #333;
+            font-weight: bold;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        button {
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #b2dfdb;
+            border-radius: 12px;
+            cursor: pointer;
+            background-color: #fff;
+            color: #00796b;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover:not([disabled]) {
+            background-color: #e0f2f1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        button:disabled { cursor: not-allowed; opacity: 0.8; }
+        .feedback {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 30px;
+            font-size: 1.1em;
+        }
+        .correct { color: #2e7d32; }
+        .wrong { color: #c62828; }
+        .hidden { display: none; }
+        #nextBtn {
+            margin-top: 25px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            width: 100%;
+        }
+        #nextBtn:hover { background-color: #f57c00; }
+        .score-display { font-size: 4em; color: #ff9800; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌱 全心依靠大挑戰 🌱</h1>
+    <div class="progress" id="progress-text">準備好了嗎？</div>
+    
+    <div id="game-screen">
+        <div class="question-box" id="question-text">題目載入中...</div>
+        <div class="options" id="options-container">
+            </div>
+        <div class="feedback" id="feedback-text"></div>
+        <button id="nextBtn" class="hidden" onclick="nextQuestion()">下一題 ➜</button>
+    </div>
+
+    <div id="end-screen" class="hidden">
+        <h2>🎉 遊戲結束！ 🎉</h2>
+        <p>你的得分是：</p>
+        <div class="score-display" id="final-score">0</div>
+        <p id="final-message"></p>
+        <button onclick="location.reload()" style="background-color: #00695c; color: white;">再玩一次</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            q: "耶穌說，看看空中的什麼動物，牠們不耕種，天父也養活牠們？",
+            options: ["小狗", "飛鳥", "獅子"],
+            answer: 1
+        },
+        {
+            q: "故事中的無知財主，他的田產豐收後，心裡想做什麼？",
+            options: ["分給窮人吃", "感謝上帝", "拆掉倉庫，蓋個更大的"],
+            answer: 2
+        },
+        {
+            q: "耶穌說，野地的百合花比哪位國王的衣服還漂亮？",
+            options: ["所羅門王", "大衛王", "希律王"],
+            answer: 0
+        },
+        {
+            q: "金句填空：「不要為明天____，因為明天自有明天的____。」",
+            options: ["快樂", "計畫", "憂慮"],
+            answer: 2
+        },
+        {
+            q: "我們應該先求什麼，上帝就會把一切需用的加給我們？",
+            options: ["祂的國和祂的義", "更多的玩具", "考第一名"],
+            answer: 0
+        },
+        {
+            q: "在這個單元中，我們扮演「小種子」長大，是為了學習誰使植物生長？",
+            options: ["農夫", "太陽", "上帝"],
+            answer: 2
+        },
+        {
+            q: "哪一樣東西是「錢買不到」但上帝賜給我們的？",
+            options: ["最新的遊戲機", "陽光和空氣", "漂亮的衣服"],
+            answer: 1
+        },
+        {
+            q: "上帝對那個只顧蓋大倉庫的財主說了什麼？",
+            options: ["你真聰明！", "無知的人！今晚就要取你的性命", "祝你身體健康"],
+            answer: 1
+        },
+        {
+            q: "耶穌說我們比飛鳥和花朵更怎麼樣？",
+            options: ["更貴重 (重要)", "更輕盈", "更可愛"],
+            answer: 0
+        },
+        {
+            q: "「一天的難處一天當就夠了」是什麼意思？",
+            options: ["每天都要很難過", "不要擔心還沒發生的事，過好今天", "事情太難了，放棄吧"],
+            answer: 1
+        }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    function loadQuestion() {
+        const qData = questions[currentQuestion];
+        document.getElementById("progress-text").innerText = `第 ${currentQuestion + 1} 題 / 共 ${questions.length} 題`;
+        document.getElementById("question-text").innerText = qData.q;
+        const optionsDiv = document.getElementById("options-container");
+        optionsDiv.innerHTML = "";
+        
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsDiv.appendChild(btn);
+        });
+        
+        document.getElementById("feedback-text").innerText = "";
+        document.getElementById("nextBtn").classList.add("hidden");
+    }
+
+    function checkAnswer(selectedIndex, btnElement) {
+        const correctIndex = questions[currentQuestion].answer;
+        const feedback = document.getElementById("feedback-text");
+        
+        const allBtns = document.querySelectorAll(".options button");
+        allBtns.forEach(b => b.disabled = true);
+
+        if (selectedIndex === correctIndex) {
+            score++;
+            feedback.innerHTML = "✅ <span style='color:green'>答對了！</span>";
+            btnElement.style.backgroundColor = "#c8e6c9";
+            btnElement.style.borderColor = "#4caf50";
+        } else {
+            feedback.innerHTML = "❌ 哎呀，正確答案是：<span style='color:#00695c'>" + questions[currentQuestion].options[correctIndex] + "</span>";
+            btnElement.style.backgroundColor = "#ffcdd2";
+            btnElement.style.borderColor = "#e57373";
+            // Highlight correct one
+            allBtns[correctIndex].style.backgroundColor = "#e0f2f1";
+            allBtns[correctIndex].style.border = "2px solid #009688";
+        }
+        
+        document.getElementById("nextBtn").classList.remove("hidden");
+    }
+
+    function nextQuestion() {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            loadQuestion();
+        } else {
+            showEndScreen();
+        }
+    }
+
+    function showEndScreen() {
+        document.getElementById("game-screen").classList.add("hidden");
+        document.getElementById("progress-text").classList.add("hidden");
+        document.getElementById("end-screen").classList.remove("hidden");
+        document.getElementById("final-score").innerText = score + " / " + questions.length;
+        
+        let msg = "";
+        if (score === questions.length) msg = "太厲害了！你是全心依靠上帝的小勇士！🏆";
+        else if (score >= 7) msg = "很棒喔！繼續加油，天父愛你！💖";
+        else msg = "沒關係，天父依然愛你，再玩一次會更棒！💪";
+        document.getElementById("final-message").innerText = msg;
+    }
+
+    // Start game
+    loadQuestion();
+</script>
+
+</body>
+</html>
